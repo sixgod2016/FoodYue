@@ -8,6 +8,7 @@
 
 import UIKit
 import SwiftyJSON
+import MJRefresh
 
 class IngredientsViewController: FoodYueViewController {
 
@@ -62,6 +63,7 @@ class IngredientsViewController: FoodYueViewController {
 	
     override func viewDidLoad() {
         super.viewDidLoad()
+		addTarget()
     }
 
     override func didReceiveMemoryWarning() {
@@ -79,7 +81,9 @@ extension IngredientsViewController: UITableViewDataSource, UITableViewDelegate,
 	
 	//MARK: - 😞addTarget😞
 	private func addTarget() {
-		
+		mainTable.mj_footer = MJRefreshAutoNormalFooter(refreshingBlock: {
+			self.pageNum += 1
+		})
 	}
 	
 	//MARK: - ☺️UI设置☺️
@@ -97,7 +101,16 @@ extension IngredientsViewController: UITableViewDataSource, UITableViewDelegate,
 			case .success(let response):
 				let dataDict = try! response.mapJSON()
 				let model = conversion(dataDict, FoodListTotalModel.self)
-				self.dataArr = model.data.data
+				if self.pageNum == 1 {
+					self.dataArr = model.data.data
+				} else {
+					self.dataArr += model.data.data
+					if model.data.data.count < 10 {
+						self.mainTable.mj_footer.endRefreshingWithNoMoreData()
+					}
+					self.mainTable.mj_footer.endRefreshing()
+				}
+				
 			case .failure(let error):
 				print(error.localizedDescription)
 			}
